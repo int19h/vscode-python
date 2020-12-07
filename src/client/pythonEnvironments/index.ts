@@ -20,6 +20,7 @@ import { WorkspaceVirtualEnvironmentLocator } from './base/locators/lowLevel/wor
 import { getEnvs } from './base/locatorUtils';
 import { initializeExternalDependencies as initializeLegacyExternalDependencies } from './common/externalDependencies';
 import { ExtensionLocators, WatchRootsArgs, WorkspaceLocators } from './discovery/locators';
+import { CondaEnvironmentLocator } from './discovery/locators/services/condaLocator';
 import { GlobalVirtualEnvironmentLocator } from './discovery/locators/services/globalVirtualEnvronmentLocator';
 import { PosixKnownPathsLocator } from './discovery/locators/services/posixKnownPathsLocator';
 import { PyenvLocator } from './discovery/locators/services/pyenvLocator';
@@ -109,6 +110,7 @@ function createNonWorkspaceLocators(
             new PyenvLocator(),
             new WindowsRegistryLocator(),
             new WindowsStoreLocator(),
+            new CondaEnvironmentLocator(),
         ];
     } else {
         // Linux/Mac locators go here
@@ -116,6 +118,7 @@ function createNonWorkspaceLocators(
             new GlobalVirtualEnvironmentLocator(),
             new PyenvLocator(),
             new PosixKnownPathsLocator(),
+            new CondaEnvironmentLocator(),
         ];
     }
     const disposables = (locators.filter((d) => d.dispose !== undefined)) as IDisposable[];

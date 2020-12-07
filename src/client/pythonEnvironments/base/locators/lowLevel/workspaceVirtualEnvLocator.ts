@@ -10,7 +10,7 @@ import {
 import {
     getFileInfo, isParentPath, pathExists,
 } from '../../../common/externalDependencies';
-import { isCondaEnvironment } from '../../../discovery/locators/services/condaLocator';
+import { isCondaEnvironment } from '../../../discovery/locators/services/conda';
 import { isPipenvEnvironment } from '../../../discovery/locators/services/pipEnvHelper';
 import { isVenvEnvironment, isVirtualenvEnvironment } from '../../../discovery/locators/services/virtualEnvironmentIdentifier';
 import { PythonEnvInfo, PythonEnvKind } from '../../info';
