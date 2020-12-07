@@ -7,7 +7,7 @@ import { getOSType, OSType } from '../../common/utils/platform';
 import { PythonVersion, UNKNOWN_PYTHON_VERSION } from '../base/info';
 import { comparePythonVersionSpecificity } from '../base/info/env';
 import { parseVersion } from '../base/info/pythonVersion';
-import { getPythonVersionFromConda } from '../discovery/locators/services/condaLocator';
+import { getPythonVersionFromConda } from '../discovery/locators/services/conda';
 import { getPythonVersionFromPyvenvCfg } from '../discovery/locators/services/virtualEnvironmentIdentifier';
 import { isDirectory, listDir } from './externalDependencies';
 import { isPosixPythonBin } from './posixUtils';
