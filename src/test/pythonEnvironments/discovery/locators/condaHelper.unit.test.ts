@@ -24,7 +24,7 @@ suite('Interpreters display name from Conda Environments', () => {
     });
     test('Must return at least Python Version', () => {
         const info: CondaInfo = {
-            pythonVersion: '3.6.1.final.10',
+            python_version: '3.6.1.final.10',
         };
         const displayName = getDisplayName(info);
         assert.equal(displayName, AnacondaDisplayName, 'Incorrect display name');
@@ -39,7 +39,7 @@ suite('Interpreters display name from Conda Environments', () => {
     });
     test("Must return info without prefixing with word 'Python'", () => {
         const info: CondaInfo = {
-            pythonVersion: '3.6.1.final.10',
+            python_version: '3.6.1.final.10',
             'sys.version':
                 '3.6.1 |Anaconda 4.4.0 (64-bit)| (default, May 11 2017, 13:25:24) [MSC v.1900 64 bit (AMD64)]',
         };
@@ -48,7 +48,7 @@ suite('Interpreters display name from Conda Environments', () => {
     });
     test('Must include Ananconda name if Company name not found', () => {
         const info: CondaInfo = {
-            pythonVersion: '3.6.1.final.10',
+            python_version: '3.6.1.final.10',
             'sys.version': '3.6.1 |4.4.0 (64-bit)| (default, May 11 2017, 13:25:24) [MSC v.1900 64 bit (AMD64)]',
         };
         const displayName = getDisplayName(info);
@@ -161,11 +161,11 @@ suite('Conda binary is located correctly', () => {
 
     function condaInfo(condaVersion: string): CondaInfo {
         return {
-            condaVersion,
-            pythonVersion: '3.9.0',
+            conda_version: condaVersion,
+            python_version: '3.9.0',
             'sys.version': '3.9.0',
             'sys.prefix': '/some/env',
-            defaultPrefix: '/conda/base',
+            default_prefix: '/conda/base',
             envs: [],
         };
     }
@@ -466,13 +466,13 @@ suite('Conda binary is located correctly', () => {
 
 suite('Conda env list is parsed correctly', () => {
     const condaInfo: CondaInfo = {
-        condaVersion: '4.8.0',
-        pythonVersion: '3.9.0',
+        conda_version: '4.8.0',
+        python_version: '3.9.0',
         'sys.version': '3.9.0',
         'sys.prefix': '/some/env',
-        rootPrefix: '/home/user/miniconda3',
-        defaultPrefix: '/home/user/miniconda3/envs/env1',
-        envsDirs: ['/home/user/miniconda3/envs', '/home/user/.conda/envs'],
+        root_prefix: '/home/user/miniconda3',
+        default_prefix: '/home/user/miniconda3/envs/env1',
+        envs_dirs: ['/home/user/miniconda3/envs', '/home/user/.conda/envs'],
         envs: [
             '/home/user/miniconda3',
             '/home/user/miniconda3/envs/env1',

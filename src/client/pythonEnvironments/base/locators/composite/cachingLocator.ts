@@ -22,10 +22,15 @@ export class CachingLocator extends LazyResourceBasedLocator {
 
     private readonly watcher = new PythonEnvsWatcher();
 
+    private readonly looper = new BackgroundRequestLooper({
+        runDefault: null,
+    });
+
     private handleOnChanged?: (event: PythonEnvsChangedEvent) => void;
 
     constructor(private readonly cache: IEnvsCache, private readonly locator: ILocator) {
         super();
+        this.disposables.push(this.looper);
         this.onChanged = this.watcher.onChanged;
     }
 
@@ -60,21 +65,13 @@ export class CachingLocator extends LazyResourceBasedLocator {
     }
 
     protected async initResources(): Promise<void> {
-        // We use a looper in the refresh methods, so we create one here
-        // and start it.
-        const looper = new BackgroundRequestLooper({
-            runDefault: null,
-        });
-        looper.start();
-        this.disposables.push(looper);
+        // We use a looper in the refresh methods, so start it here.
+        this.looper.start();
 
-        this.handleOnChanged = (event) => this.ensureCurrentRefresh(looper, event);
+        this.handleOnChanged = (event) => this.ensureCurrentRefresh(event);
 
-        // We assume that `getAllEnvs()` is cheap enough that calling
-        // it again in here is not a problem.
-        if (this.cache.getAllEnvs() === undefined) {
-            await this.ensureRecentRefresh(looper);
-        }
+        // Force a refresh to ensure that we get any new environments that weren't in the cache.
+        await this.ensureRecentRefresh();
     }
 
     protected async initWatchers(): Promise<void> {
@@ -111,15 +108,15 @@ export class CachingLocator extends LazyResourceBasedLocator {
      * wait for it to finish.  Otherwise we do not make a new request,
      * but instead only wait for the last requested refresh to complete.
      */
-    private ensureRecentRefresh(looper: BackgroundRequestLooper): Promise<void> {
+    private ensureRecentRefresh(): Promise<void> {
         // Re-use the last req in the queue if possible.
-        const last = looper.getLastRequest();
+        const last = this.looper.getLastRequest();
         if (last !== undefined) {
             const [, promise] = last;
             return promise;
         }
         // The queue is empty so add a new request.
-        return this.addRefreshRequest(looper);
+        return this.addRefreshRequest();
     }
 
     /**
@@ -133,12 +130,12 @@ export class CachingLocator extends LazyResourceBasedLocator {
      * waiting in the queue then we wait for that one instead of making
      * a new request.
      */
-    private ensureCurrentRefresh(looper: BackgroundRequestLooper, event?: PythonEnvsChangedEvent): void {
-        const req = looper.getNextRequest();
+    private ensureCurrentRefresh(event?: PythonEnvsChangedEvent): void {
+        const req = this.looper.getNextRequest();
         if (req === undefined) {
             // There isn't already a pending request (due to an
             // onChanged event), so we add one.
-            this.addRefreshRequest(looper, event).ignoreErrors();
+            this.addRefreshRequest(event).ignoreErrors();
         }
         // Otherwise let the pending request take care of it.
     }
@@ -152,8 +149,8 @@ export class CachingLocator extends LazyResourceBasedLocator {
      * `ensureRecentRefresh()` or * `ensureCurrentRefresh()` instead,
      * to avoid unnecessary refreshes.
      */
-    private addRefreshRequest(looper: BackgroundRequestLooper, event?: PythonEnvsChangedEvent): Promise<void> {
-        const [, waitUntilDone] = looper.addRequest(async () => {
+    private addRefreshRequest(event?: PythonEnvsChangedEvent): Promise<void> {
+        const [, waitUntilDone] = this.looper.addRequest(async () => {
             const iterator = this.locator.iterEnvs();
             const envs = await getEnvs(iterator);
             await this.updateCache(envs, event);
