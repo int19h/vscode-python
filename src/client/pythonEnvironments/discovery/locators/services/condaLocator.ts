@@ -5,7 +5,7 @@ import { PythonEnvInfo, PythonEnvKind } from '../../../base/info';
 import { buildEnvInfo } from '../../../base/info/env';
 import { IPythonEnvsIterator, Locator } from '../../../base/locator';
 import { getInterpreterPathFromDir } from '../../../common/commonUtils';
-import { Conda } from './conda';
+import { AnacondaCompanyName, Conda } from './conda';
 import { resolveEnvFromIterator } from '../../../base/locatorUtils';
 import { traceVerbose } from '../../../../common/logger';
 
@@ -46,6 +46,7 @@ export class CondaEnvironmentLocator extends Locator {
                 const info = buildEnvInfo({
                     executable,
                     kind: PythonEnvKind.Conda,
+                    org: AnacondaCompanyName,
                     location: prefix,
                 });
                 if (name) {

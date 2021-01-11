@@ -28,14 +28,29 @@ export async function* findInterpretersInDir(
     const checkBin = os === OSType.Windows ? isWindowsPythonExe : isPosixPythonBin;
     const itemFilter = filter ?? (() => true);
 
-    const dirContents = (await fsapi.readdir(root)).filter(itemFilter);
+    let dirContents: string[];
+    try {
+        dirContents = await fsapi.readdir(root);
+    } catch (ex) {
+        // Directory doesn't exist or is not readable - treat as empty.
+        return;
+    }
+    dirContents = dirContents.filter(itemFilter);
 
     const generators = dirContents.map((item) => {
         async function* generator() {
             const fullPath = path.join(root, item);
-            const stat = await fsapi.lstat(fullPath);
 
-            if (stat.isDirectory()) {
+            let isDir: boolean;
+            try {
+                const stat = await fsapi.lstat(fullPath);
+                isDir = stat.isDirectory();
+            } catch (ex) {
+                // Path doesn't exist, or don't have permissions to stat.
+                return;
+            }
+
+            if (isDir) {
                 if (recurseLevels && recurseLevels > 0) {
                     yield* findInterpretersInDir(fullPath, recurseLevels - 1);
                 }
