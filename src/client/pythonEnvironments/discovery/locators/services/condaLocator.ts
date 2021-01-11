@@ -4,11 +4,16 @@ import '../../../../common/extensions';
 import { PythonEnvInfo, PythonEnvKind } from '../../../base/info';
 import { buildEnvInfo } from '../../../base/info/env';
 import { IPythonEnvsIterator, Locator } from '../../../base/locator';
-import { getEnvironmentDirFromPath, getInterpreterPathFromDir } from '../../../common/commonUtils';
-import { arePathsSame } from '../../../common/externalDependencies';
+import { getInterpreterPathFromDir } from '../../../common/commonUtils';
 import { Conda } from './conda';
+import { resolveEnvFromIterator } from '../../../base/locatorUtils';
+import { traceVerbose } from '../../../../common/logger';
 
 export class CondaEnvironmentLocator extends Locator {
+    // Locating conda binary is expensive, since it potentially involves spawning or
+    // trying to spawn processes; so it's done lazily and asynchronously. Methods that
+    // need a Conda instance should use getConda() to obtain it, and should never access
+    // this property directly.
     private condaPromise: Promise<Conda | undefined> | undefined;
 
     public constructor(conda?: Conda) {
@@ -19,6 +24,7 @@ export class CondaEnvironmentLocator extends Locator {
     }
 
     public async getConda(): Promise<Conda | undefined> {
+        traceVerbose(`Searching for conda.`);
         if (this.condaPromise === undefined) {
             this.condaPromise = Conda.locate();
         }
@@ -28,8 +34,10 @@ export class CondaEnvironmentLocator extends Locator {
     public async *iterEnvs(): IPythonEnvsIterator {
         const conda = await this.getConda();
         if (conda === undefined) {
+            traceVerbose(`Couldn't locate the conda binary.`);
             return;
         }
+        traceVerbose(`Searching for conda environments using ${conda.command}`);
 
         const envs = await conda.getEnvList();
         for (const { name, prefix } of envs) {
@@ -43,19 +51,21 @@ export class CondaEnvironmentLocator extends Locator {
                 if (name) {
                     info.name = name;
                 }
+                traceVerbose(`Found conda environment: ${info}`);
                 yield info;
             }
         }
     }
 
     public async resolveEnv(env: string | PythonEnvInfo): Promise<PythonEnvInfo | undefined> {
-        const exePath = typeof env === 'string' ? env : env.executable.filename;
-        const location = getEnvironmentDirFromPath(exePath);
-        for await (const info of this.iterEnvs()) {
-            if (arePathsSame(info.location, location)) {
-                return info;
+        if (typeof env !== 'string') {
+            if (env.kind !== PythonEnvKind.Conda && env.kind !== PythonEnvKind.Unknown) {
+                return undefined;
             }
         }
-        return undefined;
+
+        // There's no performance difference between getting all known environments, or just one -
+        // we have to spawn conda either way - so use the naive implementation.
+        return resolveEnvFromIterator(env, this.iterEnvs());
     }
 }

@@ -330,6 +330,7 @@ export class Conda {
      */
     public async getInfo(): Promise<CondaInfo> {
         const result = await exec(this.command, ['info', '--json']);
+        traceVerbose(`conda info --json: ${result.stdout}`);
         return JSON.parse(result.stdout);
     }
 
